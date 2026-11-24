@@ -22,7 +22,7 @@
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { copyFileSync, mkdirSync } from "node:fs";
+import { copyFileSync, mkdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 // The picture bundled with this repository, resolved relative to this file
@@ -38,3 +38,11 @@ const outputImage = join(outputDir, "entry.png");
 // byte-identical output, as the contest rules require.
 mkdirSync(outputDir, { recursive: true });
 copyFileSync(sourceImage, outputImage);
+
+// Sanity check the copy that was just written: it must be a non-empty file
+// no larger than the contest's 1 MiB cap. Failing loudly here is better
+// than handing the grader a truncated or empty picture.
+const written = statSync(outputImage);
+if (written.size === 0 || written.size > 1_048_576) {
+  throw new Error(`entry.png has an invalid size: ${written.size} bytes`);
+}
